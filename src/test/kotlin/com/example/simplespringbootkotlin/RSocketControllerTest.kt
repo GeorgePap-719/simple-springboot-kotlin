@@ -21,6 +21,7 @@ internal class RSocketControllerTest(
     private val serverPort: String,
 ) {
 
+    // https://github.com/spring-projects/spring-framework/issues/26829
     @Test
     fun `test 1st case missing response`(): Unit = runBlocking {
         val tcpRequester = rsocketBuilder.tcp("localhost", serverPort.toInt())
@@ -33,6 +34,7 @@ internal class RSocketControllerTest(
             .block()
     }
 
+    // https://github.com/spring-projects/spring-framework/issues/26829
     @Test
     fun `test 2st case missing response`(): Unit = runBlocking {
         val tcpRequester = rsocketBuilder.tcp("localhost", serverPort.toInt())
@@ -45,6 +47,7 @@ internal class RSocketControllerTest(
             .sendAndAwait()
     }
 
+    // workaround for https://github.com/spring-projects/spring-framework/issues/26829
     @Test
     fun `test 1st case where it works`(): Unit = runBlocking {
         val tcpRequester = rsocketBuilder.tcp("localhost", serverPort.toInt())
