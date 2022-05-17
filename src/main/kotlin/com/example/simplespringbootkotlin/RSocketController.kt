@@ -14,11 +14,17 @@ val proto = ProtoBuf
 @Controller
 class RSocketController {
 
+    /**
+     * Hi from put
+     */
     @MessageMapping("put")
     suspend fun receive(@Payload inBoundMessage: ByteArray) {
         println(inBoundMessage.decode().toString())
     }
 
+    /**
+     * Hi from put.2
+     */
     @MessageMapping("put.2")
     suspend fun receive2(@Payload inBoundMessage: ByteArray) {
         decodeWithResponse(inBoundMessage)
