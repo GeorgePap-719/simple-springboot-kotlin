@@ -1,4 +1,16 @@
+import org.jetbrains.dokka.gradle.DokkaTask
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
+import java.net.URL
+
+//buildscript {
+//    dependencies {
+//        classpath("org.jetbrains.dokka:dokka-gradle-plugin:1.6.21")
+//    }
+//}
+//
+//apply(plugin="org.jetbrains.dokka")
+
+
 
 plugins {
     id("org.springframework.boot") version "2.6.7"
@@ -7,7 +19,7 @@ plugins {
     kotlin("plugin.spring") version "1.6.21"
     kotlin("plugin.serialization") version "1.6.21"
 
-    id("org.jetbrains.dokka") version "1.6.21"
+    id("org.jetbrains.dokka") version "1.6.10"
 }
 
 group = "com.example"
