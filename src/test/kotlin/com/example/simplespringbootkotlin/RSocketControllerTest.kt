@@ -29,7 +29,7 @@ internal class RSocketControllerTest(
 
         tcpRequester
             .route("put")
-            .data(proto.encodeToByteArray(message))
+            .data(protoBufFormat.encodeToByteArray(message))
             .send()
             .block()
     }
@@ -42,7 +42,7 @@ internal class RSocketControllerTest(
 
         tcpRequester
             .route("put")
-            .data(proto.encodeToByteArray(message))
+            .data(protoBufFormat.encodeToByteArray(message))
             // pretty similar to the 1st case as both subscribe and wait for the next value.
             .sendAndAwait()
     }
@@ -55,7 +55,7 @@ internal class RSocketControllerTest(
 
         tcpRequester
             .route("put")
-            .data(proto.encodeToByteArray(message))
+            .data(protoBufFormat.encodeToByteArray(message))
             .retrieveAndAwaitOrNull<Unit>()
     }
 

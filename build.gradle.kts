@@ -27,8 +27,16 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-reactor:1.6.0")
 
 
-    implementation("org.springframework.boot:spring-boot-starter-webflux")
-    implementation("org.springframework.boot:spring-boot-starter-rsocket")
+    implementation("org.springframework.boot:spring-boot-starter-webflux") {
+        exclude("com.fasterxml.jackson.core")
+        exclude("com.fasterxml.jackson.datatype")
+        exclude("com.fasterxml.jackson.module")
+    }
+    implementation("org.springframework.boot:spring-boot-starter-rsocket") {
+        exclude("com.fasterxml.jackson.core")
+        exclude("com.fasterxml.jackson.datatype")
+        exclude("com.fasterxml.jackson.module")
+    }
 
 
     testImplementation("org.springframework.boot:spring-boot-starter-test")
