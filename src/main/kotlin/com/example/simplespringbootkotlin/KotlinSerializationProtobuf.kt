@@ -9,19 +9,35 @@ import kotlinx.coroutines.reactive.awaitSingle
 import kotlinx.coroutines.reactor.asFlux
 import kotlinx.coroutines.reactor.mono
 import kotlinx.serialization.ExperimentalSerializationApi
+import kotlinx.serialization.KSerializer
 import kotlinx.serialization.protobuf.ProtoBuf
 import kotlinx.serialization.serializer
+import kotlinx.serialization.serializerOrNull
 import org.reactivestreams.Publisher
 import org.springframework.core.ResolvableType
 import org.springframework.core.codec.Decoder
 import org.springframework.core.codec.Encoder
 import org.springframework.core.io.buffer.DataBuffer
 import org.springframework.core.io.buffer.DataBufferFactory
+import org.springframework.util.ConcurrentReferenceHashMap
 import org.springframework.util.MimeType
 import org.springframework.util.MimeTypeUtils
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
+import java.lang.reflect.Type
 
+// unused for now.
+private val serializersCache = ConcurrentReferenceHashMap<Type, KSerializer<*>>()
+
+private fun getSerializer(protobuf: ProtoBuf, type: Type): KSerializer<Any>? =
+    serializersCache.getOrPut(type) {
+        protobuf.serializersModule.serializerOrNull(type) ?: return null
+    }.cast()
+
+@Suppress("UNCHECKED_CAST", "NOTHING_TO_INLINE")
+private inline fun KSerializer<*>.cast(): KSerializer<Any> {
+    return this as KSerializer<Any>
+}
 
 class CustomProtobufEncoder(private val protobufSerializer: ProtoBuf) : Encoder<Any> {
 
