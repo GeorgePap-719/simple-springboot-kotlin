@@ -63,7 +63,7 @@ class TestSerialization(
         val rsocketResponse = tcpRequester
             .route("put.3")
             .data(
-                protoBufFormat.encodeToByteArray(payload(IncomingMessage("Hi with payload"), "not error"))
+                payload(IncomingMessage("Hi with payload"), "not error")
             )
             .retrieveAndAwaitOrNull<Payload>()
 
@@ -72,7 +72,6 @@ class TestSerialization(
         }
 
     }
-
 
 }
 

@@ -33,6 +33,7 @@ val protobufFormatWithT = ProtoBuf {
             subclass(PayloadTImpl.serializer(PolymorphicSerializer(Any::class)))
             polymorphic(Any::class) {
                 subclass(TestObject1::class, TestObject1.serializer())
+                subclass(IncomingMessage::class, IncomingMessage.serializer())
             }
         }
     }
