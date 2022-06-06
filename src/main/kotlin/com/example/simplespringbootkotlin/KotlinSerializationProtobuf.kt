@@ -8,17 +8,15 @@ import kotlinx.coroutines.reactive.asFlow
 import kotlinx.coroutines.reactive.awaitSingle
 import kotlinx.coroutines.reactor.asFlux
 import kotlinx.coroutines.reactor.mono
-import kotlinx.serialization.ExperimentalSerializationApi
-import kotlinx.serialization.KSerializer
+import kotlinx.serialization.*
 import kotlinx.serialization.protobuf.ProtoBuf
-import kotlinx.serialization.serializer
-import kotlinx.serialization.serializerOrNull
 import org.reactivestreams.Publisher
 import org.springframework.core.ResolvableType
 import org.springframework.core.codec.Decoder
 import org.springframework.core.codec.Encoder
 import org.springframework.core.io.buffer.DataBuffer
 import org.springframework.core.io.buffer.DataBufferFactory
+import org.springframework.core.io.buffer.DataBufferUtils
 import org.springframework.util.ConcurrentReferenceHashMap
 import org.springframework.util.MimeType
 import org.springframework.util.MimeTypeUtils
@@ -66,7 +64,21 @@ class CustomProtobufEncoder(private val protobufSerializer: ProtoBuf) : Encoder<
         hints: MutableMap<String, Any>?
     ): DataBuffer {
         val kSerializer = protobufSerializer.serializersModule.serializer(valueType.type)
-        return bufferFactory.wrap(protobufSerializer.encodeToByteArray(kSerializer, value))
+        val buffer = bufferFactory.allocateBuffer()
+        return runCatching<DataBuffer> {
+            buffer.asOutputStream().write(protobufSerializer.encodeToByteArray(kSerializer, value))
+            buffer
+        }.getOrElse {
+            DataBufferUtils.release(buffer)
+            throw IllegalStateException("Unexpected I/O error while writing to data buffer: $it")
+        }
+    }
+
+    //https://developers.google.com/protocol-buffers/docs/techniques?hl=en#streaming
+    //TODO: support delimited and not delimited values.
+    private fun encodeValue() {
+        val encodeToByteArray = protobufSerializer.encodeToByteArray("")
+        encodeToByteArray.size
     }
 
     override fun getEncodableMimeTypes(): MutableList<MimeType> {
@@ -100,9 +112,8 @@ class CustomProtobufDecoder(private val protobufSerializer: ProtoBuf) : Decoder<
         mimeType: MimeType?,
         hints: MutableMap<String, Any>?
     ): Mono<Any> {
-        val kSerializer = protobufSerializer.serializersModule.serializer(elementType.type)
-
         return mono {
+            val kSerializer = protobufSerializer.serializersModule.serializer(elementType.type)
             val dataBuffer = inputStream.awaitSingle()
             protobufSerializer.decodeFromByteArray(kSerializer, dataBuffer.asInputStream().readBytes())
         }
