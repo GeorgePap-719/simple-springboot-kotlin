@@ -56,9 +56,9 @@ class RSocketController {
 
 
     @MessageMapping("put.3")
-    suspend fun receive3(@SpringPayload inBoundMessage: Payload): Payload {
+    suspend fun receive3(@SpringPayload inBoundMessage: IncomingMessage): IncomingMessage {
         println(inBoundMessage.toString())
-        return payload(TestObject1("hi back with codec support"), "no error here")
+        return IncomingMessage("Hi back from put.3 controller")
     }
 
 }

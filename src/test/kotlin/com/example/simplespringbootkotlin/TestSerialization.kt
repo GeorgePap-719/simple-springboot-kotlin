@@ -21,20 +21,20 @@ class TestSerialization(
     private val serverPort: String
 ) {
 
-    @Test
+//    @Test
     fun `test proto serialization`(): Unit = runBlocking {
         val payload = payload(TestObject1("hi"), "some error")
         println(protoBufFormat.encodeToByteArray(payload))
     }
 
-    @Test
+//    @Test
     fun `test proto serialization with T`(): Unit = runBlocking {
         val payload = payloadT(TestObject1("hi"), "some error T")
         println(protobufFormatWithT.encodeToByteArray(payload))
     }
 
 
-    @Test
+//    @Test
     fun `test serialization in rsocket api`(): Unit = runBlocking {
         val payload = payload(TestObject1("hi"), "some error")
 
@@ -63,9 +63,9 @@ class TestSerialization(
         val rsocketResponse = tcpRequester
             .route("put.3")
             .data(
-                payload(IncomingMessage("Hi with payload"), "not error")
+                IncomingMessage("Hi with payload")
             )
-            .retrieveAndAwaitOrNull<Payload>()
+            .retrieveAndAwaitOrNull<IncomingMessage>()
 
         rsocketResponse?.let {
             println(it)

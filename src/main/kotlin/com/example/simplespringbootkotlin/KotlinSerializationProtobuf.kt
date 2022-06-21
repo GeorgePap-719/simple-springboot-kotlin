@@ -26,7 +26,7 @@ import java.lang.reflect.Type
 
 // unused for now.
 private val serializersCache = ConcurrentReferenceHashMap<Type, KSerializer<*>>()
-
+// unsed for now
 private fun getSerializer(protobuf: ProtoBuf, type: Type): KSerializer<Any>? =
     serializersCache.getOrPut(type) {
         protobuf.serializersModule.serializerOrNull(type) ?: return null
@@ -63,15 +63,10 @@ class CustomProtobufEncoder(private val protobufSerializer: ProtoBuf) : Encoder<
         mimeType: MimeType?,
         hints: MutableMap<String, Any>?
     ): DataBuffer {
-        val kSerializer = protobufSerializer.serializersModule.serializer(valueType.type)
-        val buffer = bufferFactory.allocateBuffer()
-        return runCatching<DataBuffer> {
-            buffer.asOutputStream().write(protobufSerializer.encodeToByteArray(kSerializer, value))
-            buffer
-        }.getOrElse {
-            DataBufferUtils.release(buffer)
-            throw IllegalStateException("Unexpected I/O error while writing to data buffer: $it")
-        }
+        val kSerializer = serializer(valueType.type)
+        val byteArray = protobufSerializer.encodeToByteArray(kSerializer, value)
+        println(byteArray)
+        return bufferFactory.wrap(byteArray)
     }
 
     //https://developers.google.com/protocol-buffers/docs/techniques?hl=en#streaming
@@ -98,7 +93,7 @@ class CustomProtobufDecoder(private val protobufSerializer: ProtoBuf) : Decoder<
         mimeType: MimeType?,
         hints: MutableMap<String, Any>?
     ): Flux<Any> {
-        val kSerializer = protobufSerializer.serializersModule.serializer(elementType.type)
+        val kSerializer = serializer(elementType.type)
 
         return inputStream
             .asFlow()
@@ -113,7 +108,7 @@ class CustomProtobufDecoder(private val protobufSerializer: ProtoBuf) : Decoder<
         hints: MutableMap<String, Any>?
     ): Mono<Any> {
         return mono {
-            val kSerializer = protobufSerializer.serializersModule.serializer(elementType.type)
+            val kSerializer = serializer(elementType.type)
             val dataBuffer = inputStream.awaitSingle()
             protobufSerializer.decodeFromByteArray(kSerializer, dataBuffer.asInputStream().readBytes())
         }
@@ -125,7 +120,7 @@ class CustomProtobufDecoder(private val protobufSerializer: ProtoBuf) : Decoder<
         mimeType: MimeType?,
         hints: MutableMap<String, Any>?
     ): Any {
-        val kSerializer = protobufSerializer.serializersModule.serializer(targetType.type)
+        val kSerializer = serializer(targetType.type)
         return protobufSerializer.decodeFromByteArray(kSerializer, buffer.asInputStream().readBytes())
     }
 
