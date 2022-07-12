@@ -6,9 +6,8 @@ import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.protobuf.ProtoBuf
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
-import org.springframework.http.codec.json.KotlinSerializationJsonDecoder
-import org.springframework.http.codec.json.KotlinSerializationJsonEncoder
 import org.springframework.http.codec.protobuf.ProtobufCodecSupport
+import org.springframework.http.codec.protobuf.ProtobufDecoder
 import org.springframework.http.codec.protobuf.ProtobufEncoder
 import org.springframework.messaging.rsocket.RSocketStrategies
 import org.springframework.messaging.rsocket.annotation.support.RSocketMessageHandler
@@ -28,10 +27,10 @@ class RSocketStrategies : ProtobufCodecSupport() {
             .builder()
             .encoder(CustomProtobufEncoder(ProtoBuf))
             .decoder(CustomProtobufDecoder(ProtoBuf))
-//            .encoder(ProtobufEncoder())
+            .encoder(ProtobufEncoder())
 //            .encoder(KotlinSerializationJsonEncoder())
 //            .encoder(KotlinSerializationJsonEncoder())
-//            .decoder(ProtobufDecoder())
+            .decoder(ProtobufDecoder())
 //            .decoder(KotlinSerializationJsonDecoder)
             .build()
 

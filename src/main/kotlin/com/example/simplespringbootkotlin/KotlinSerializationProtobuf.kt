@@ -16,7 +16,6 @@ import org.springframework.core.codec.Decoder
 import org.springframework.core.codec.Encoder
 import org.springframework.core.io.buffer.DataBuffer
 import org.springframework.core.io.buffer.DataBufferFactory
-import org.springframework.core.io.buffer.DataBufferUtils
 import org.springframework.util.ConcurrentReferenceHashMap
 import org.springframework.util.MimeType
 import org.springframework.util.MimeTypeUtils
@@ -26,7 +25,8 @@ import java.lang.reflect.Type
 
 // unused for now.
 private val serializersCache = ConcurrentReferenceHashMap<Type, KSerializer<*>>()
-// unsed for now
+
+// unused for now
 private fun getSerializer(protobuf: ProtoBuf, type: Type): KSerializer<Any>? =
     serializersCache.getOrPut(type) {
         protobuf.serializersModule.serializerOrNull(type) ?: return null
@@ -52,7 +52,7 @@ class CustomProtobufEncoder(private val protobufSerializer: ProtoBuf) : Encoder<
     ): Flux<DataBuffer> {
         return inputStream
             .asFlow()
-            .map { encodeValue(it, bufferFactory, elementType, mimeType, hints) }
+            .map { encodeDelimitedMessage(it, bufferFactory, elementType) }
             .asFlux()
     }
 
@@ -71,10 +71,23 @@ class CustomProtobufEncoder(private val protobufSerializer: ProtoBuf) : Encoder<
 
     //https://developers.google.com/protocol-buffers/docs/techniques?hl=en#streaming
     //TODO: support delimited and not delimited values.
-    private fun encodeValue() {
-        val encodeToByteArray = protobufSerializer.encodeToByteArray("")
-        encodeToByteArray.size
+    private fun encodeDelimitedMessage(
+        value: Any,
+        bufferFactory: DataBufferFactory,
+        valueType: ResolvableType
+    ): DataBuffer {
+        val kSerializer = serializer(valueType.type)
+        val encodedByteArray = protobufSerializer.encodeToByteArray(kSerializer, value)
+
+        val buffer = bufferFactory.allocateBuffer()
+        val serializedSize = encodedByteArray.size
+        val outputStream = buffer.asOutputStream()
+        outputStream.write(serializedSize)
+        outputStream.write(encodedByteArray)
+        outputStream.flush()
+        return buffer
     }
+
 
     override fun getEncodableMimeTypes(): MutableList<MimeType> {
         return mimeTypes.toMutableList()
@@ -83,6 +96,9 @@ class CustomProtobufEncoder(private val protobufSerializer: ProtoBuf) : Encoder<
 
 
 class CustomProtobufDecoder(private val protobufSerializer: ProtoBuf) : Decoder<Any> {
+    // default max size for aggregating messages.
+    private val maxMessageSize = 256 * 1024
+
     override fun canDecode(elementType: ResolvableType, mimeType: MimeType?): Boolean {
         return supportsMimeType(mimeType)
     }
@@ -93,12 +109,40 @@ class CustomProtobufDecoder(private val protobufSerializer: ProtoBuf) : Decoder<
         mimeType: MimeType?,
         hints: MutableMap<String, Any>?
     ): Flux<Any> {
-        val kSerializer = serializer(elementType.type)
-
         return inputStream
             .asFlow()
-            .map { protobufSerializer.decodeFromByteArray(kSerializer, it.asInputStream().readBytes()) }
+            .map { decodeDelimitedMessage(inputStream, elementType) }
             .asFlux()
+    }
+
+    private suspend fun decodeDelimitedMessage(
+        inputStream: Publisher<DataBuffer>,
+        valueType: ResolvableType
+    ): Any {
+        val kSerializer = serializer(valueType.type)
+        val dataBuffer = inputStream.awaitSingle()
+        // read first byte for getting the message size.
+//        getMessageSizeOrNull(dataBuffer) ?: TODO()
+        // use the serializer for the rest bytes.
+        val byte = dataBuffer.read()
+        val byteArray = ByteArray(1)
+        byteArray[0] = byte
+        val bytesSizeToRead = protobufSerializer.decodeFromByteArray<Int>(byteArray)
+        val bytesToWrite = ByteArray(bytesSizeToRead)
+        dataBuffer.read(byteArray, 0, bytesSizeToRead)
+        return protobufSerializer.decodeFromByteArray(kSerializer, bytesToWrite)
+    }
+
+    // TODO: see https://developers.google.com/protocol-buffers/docs/encoding
+    private fun getMessageSizeOrNull(dataBuffer: DataBuffer): Int? {
+//        val byte = dataBuffer.read()
+//        val byteArray = ByteArray(1)
+//        byteArray[0] = byte
+//        val bytesSizeToRead = protobufSerializer.decodeFromByteArray<Int>(byteArray)
+//        val bytesToWrite = ByteArray(bytesSizeToRead)
+//        dataBuffer.read(byteArray, 0, bytesSizeToRead)
+//        return protobufSerializer.decodeFromByteArray(bytesToWrite)
+        return null
     }
 
     override fun decodeToMono(

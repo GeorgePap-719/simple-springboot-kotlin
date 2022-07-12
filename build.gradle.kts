@@ -26,6 +26,9 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.6.0")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-reactive:1.6.0")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-reactor:1.6.0")
+    implementation("org.springframework:spring-web:5.3.21")
+    implementation("com.google.protobuf:protobuf-kotlin:3.21.2")
+    implementation("com.google.protobuf:protobuf-java:3.21.2")
 
 
     implementation("org.springframework.boot:spring-boot-starter-webflux") {
