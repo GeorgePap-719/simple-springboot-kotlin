@@ -2,6 +2,8 @@
 
 package com.example.simplespringbootkotlin
 
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.PolymorphicSerializer
 import kotlinx.serialization.decodeFromByteArray
@@ -59,6 +61,12 @@ class RSocketController {
     suspend fun receive3(@SpringPayload inBoundMessage: IncomingMessage): IncomingMessage {
         println(inBoundMessage.toString())
         return IncomingMessage("Hi back from put.3 controller")
+    }
+
+    @MessageMapping("put.stream")
+    fun stream(@SpringPayload inBoundMessage: IncomingMessage): Flow<IncomingMessage> {
+        println(inBoundMessage.toString())
+        return flowOf(IncomingMessage("Hi back from put.stream controller"))
     }
 
 }

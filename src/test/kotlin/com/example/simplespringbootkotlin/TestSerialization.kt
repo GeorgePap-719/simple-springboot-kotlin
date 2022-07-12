@@ -2,6 +2,7 @@
 
 package com.example.simplespringbootkotlin
 
+import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.decodeFromByteArray
@@ -12,6 +13,7 @@ import org.springframework.boot.rsocket.context.LocalRSocketServerPort
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.messaging.rsocket.RSocketRequester
 import org.springframework.messaging.rsocket.retrieveAndAwaitOrNull
+import org.springframework.messaging.rsocket.retrieveFlow
 
 @SpringBootTest
 class TestSerialization(
@@ -21,20 +23,20 @@ class TestSerialization(
     private val serverPort: String
 ) {
 
-//    @Test
+    //    @Test
     fun `test proto serialization`(): Unit = runBlocking {
         val payload = payload(TestObject1("hi"), "some error")
         println(protoBufFormat.encodeToByteArray(payload))
     }
 
-//    @Test
+    //    @Test
     fun `test proto serialization with T`(): Unit = runBlocking {
         val payload = payloadT(TestObject1("hi"), "some error T")
         println(protobufFormatWithT.encodeToByteArray(payload))
     }
 
 
-//    @Test
+    //    @Test
     fun `test serialization in rsocket api`(): Unit = runBlocking {
         val payload = payload(TestObject1("hi"), "some error")
 
@@ -70,8 +72,25 @@ class TestSerialization(
         rsocketResponse?.let {
             println(it)
         }
-
     }
 
+
+    @Test
+    fun `test stream serialization in rsocket api with custom codec support`(): Unit = runBlocking {
+        val payload = payload(TestObject1("hi"), "some error")
+
+        val tcpRequester = rsocketBuilder
+            .tcp("localhost", serverPort.toInt())
+
+        val rsocketResponse = tcpRequester
+            .route("put.stream")
+            .data(
+                IncomingMessage("Hi with payload")
+            ).retrieveFlow<IncomingMessage>()
+
+        rsocketResponse.collect {
+            println(it)
+        }
+    }
 }
 
