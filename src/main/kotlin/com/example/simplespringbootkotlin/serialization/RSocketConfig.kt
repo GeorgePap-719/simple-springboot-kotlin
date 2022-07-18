@@ -1,6 +1,6 @@
 @file:OptIn(ExperimentalSerializationApi::class)
 
-package com.example.simplespringbootkotlin
+package com.example.simplespringbootkotlin.serialization
 
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.protobuf.ProtoBuf
@@ -11,7 +11,7 @@ import org.springframework.messaging.rsocket.RSocketStrategies
 import org.springframework.messaging.rsocket.annotation.support.RSocketMessageHandler
 
 @Configuration
-class RSocketStrategies : ProtobufCodecSupport() {
+class RSocketConfig : ProtobufCodecSupport() {
 
     @Bean
     fun rsocketMessageHandler(strategyForPayload: RSocketStrategies) = RSocketMessageHandler().apply {

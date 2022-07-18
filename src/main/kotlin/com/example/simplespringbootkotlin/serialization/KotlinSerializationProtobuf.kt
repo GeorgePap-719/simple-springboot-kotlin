@@ -1,6 +1,6 @@
 @file:OptIn(ExperimentalSerializationApi::class)
 
-package com.example.simplespringbootkotlin
+package com.example.simplespringbootkotlin.serialization
 
 import io.rsocket.metadata.WellKnownMimeType
 import kotlinx.coroutines.flow.map
