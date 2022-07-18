@@ -69,7 +69,7 @@ class RSocketController {
             inBoundMessage.collect {
                 if (counter == 10) return@collect
                 counter++
-                println("for counter: $counter received: $it")
+                println("received: $it")
                 emit(IncomingMessage("Pong-$counter"))
             }
         }

@@ -37,7 +37,7 @@ private inline fun KSerializer<*>.cast(): KSerializer<Any> {
     return this as KSerializer<Any>
 }
 
-class CustomProtobufEncoder(private val protobufSerializer: ProtoBuf) : Encoder<Any> {
+class KotlinSerializationProtobufEncoder(private val protobufSerializer: ProtoBuf = ProtoBuf) : Encoder<Any> {
 
     override fun canEncode(elementType: ResolvableType, mimeType: MimeType?): Boolean {
         return supportsMimeType(mimeType)
@@ -70,7 +70,6 @@ class CustomProtobufEncoder(private val protobufSerializer: ProtoBuf) : Encoder<
     }
 
     //https://developers.google.com/protocol-buffers/docs/techniques?hl=en#streaming
-    //TODO: support delimited and not delimited values.
     private fun encodeDelimitedMessage(
         value: Any,
         bufferFactory: DataBufferFactory,
@@ -95,7 +94,7 @@ class CustomProtobufEncoder(private val protobufSerializer: ProtoBuf) : Encoder<
 }
 
 
-class CustomProtobufDecoder(private val protobufSerializer: ProtoBuf) : Decoder<Any> {
+class KotlinSerializationProtobufDecoder(private val protobufSerializer: ProtoBuf = ProtoBuf) : Decoder<Any> {
     // default max size for aggregating messages.
     private val maxMessageSize = 256 * 1024
 

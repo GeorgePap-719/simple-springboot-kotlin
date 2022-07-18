@@ -23,8 +23,8 @@ class RSocketConfig : ProtobufCodecSupport() {
     fun strategyForPayload(): RSocketStrategies {
         return RSocketStrategies
             .builder()
-            .encoder(CustomProtobufEncoder(ProtoBuf))
-            .decoder(CustomProtobufDecoder(ProtoBuf))
+            .encoder(KotlinSerializationProtobufEncoder(ProtoBuf))
+            .decoder(KotlinSerializationProtobufDecoder(ProtoBuf))
 //            .encoder(ProtobufEncoder())
 //            .encoder(KotlinSerializationJsonEncoder())
 //            .encoder(KotlinSerializationJsonEncoder())
