@@ -3,11 +3,11 @@
 package com.example.simplespringbootkotlin
 
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.PolymorphicSerializer
-import kotlinx.serialization.decodeFromByteArray
-import kotlinx.serialization.encodeToByteArray
 import kotlinx.serialization.modules.SerializersModule
 import kotlinx.serialization.modules.polymorphic
 import kotlinx.serialization.modules.subclass
@@ -42,39 +42,36 @@ val protobufFormatWithT = ProtoBuf {
 }
 
 @Controller
+// no open-poly serialization
 class RSocketController {
+    private var counter = 0
 
     @MessageMapping("put")
     suspend fun receive(@SpringPayload inBoundMessage: IncomingMessage) {
-        println(inBoundMessage.toString())
+        println("received in put: $inBoundMessage")
     }
-
-    @MessageMapping("put.2")
-    suspend fun receive2(@SpringPayload inBoundMessage: ByteArray): ByteArray {
-        val response = decodeWithResponse(inBoundMessage)
-        println(response)
-        return protoBufFormat.encodeToByteArray(IncomingMessage("Hi back with byte array response"))
-    }
-
 
     @MessageMapping("put.3")
     suspend fun receive3(@SpringPayload inBoundMessage: IncomingMessage): IncomingMessage {
-        println(inBoundMessage.toString())
+        println("received in put.3: $inBoundMessage")
         return IncomingMessage("Hi back from put.3 controller")
     }
 
     @MessageMapping("put.stream")
     fun stream(@SpringPayload inBoundMessage: IncomingMessage): Flow<IncomingMessage> {
-        println(inBoundMessage.toString())
+        println("received in put.stream: $inBoundMessage")
         return flowOf(IncomingMessage("Hi back from put.stream controller"))
     }
 
-}
-
-private fun decodeWithResponse(value: ByteArray): IncomingMessage {
-    return protoBufFormat.decodeFromByteArray(value)
-}
-
-private fun ByteArray.decode(): IncomingMessage {
-    return protoBufFormat.decodeFromByteArray(this)
+    @MessageMapping("ping.pong")
+    fun pingPong(@SpringPayload inBoundMessage: Flow<IncomingMessage>): Flow<IncomingMessage> {
+        return flow {
+            inBoundMessage.collect {
+                if (counter == 10) return@collect
+                counter++
+                println("for counter: $counter received: $it")
+                emit(IncomingMessage("Pong-$counter"))
+            }
+        }
+    }
 }

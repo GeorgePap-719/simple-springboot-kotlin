@@ -27,8 +27,12 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-reactive:1.6.0")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-reactor:1.6.0")
     implementation("org.springframework:spring-web:5.3.21")
-    implementation("com.google.protobuf:protobuf-kotlin:3.21.2")
-    implementation("com.google.protobuf:protobuf-java:3.21.2")
+//    implementation("com.google.protobuf:protobuf-kotlin:3.21.2")
+//    implementation("com.google.protobuf:protobuf-java:3.21.2")
+
+    // testing
+    testImplementation("io.kotest:kotest-assertions-core:5.3.1")
+    testImplementation("app.cash.turbine:turbine:0.8.0")
 
 
     implementation("org.springframework.boot:spring-boot-starter-webflux") {
