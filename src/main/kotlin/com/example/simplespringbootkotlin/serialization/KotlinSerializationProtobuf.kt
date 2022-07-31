@@ -65,7 +65,7 @@ class KotlinSerializationProtobufEncoder(private val protobufSerializer: ProtoBu
     ): DataBuffer {
         val kSerializer = serializer(valueType.type)
         val byteArray = protobufSerializer.encodeToByteArray(kSerializer, value)
-        println(byteArray)
+//        println(byteArray)
         return bufferFactory.wrap(byteArray)
     }
 

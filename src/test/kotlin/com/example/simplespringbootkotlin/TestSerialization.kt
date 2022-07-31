@@ -93,6 +93,7 @@ class TestSerialization(
             }
         }
 
+
         @Test
         fun `test two-way channel serialization in rsocket api with ping-pong and turbine`(): Unit = runBlocking {
             val tcpRequester = rsocketBuilder
@@ -102,14 +103,15 @@ class TestSerialization(
                 for (i in 0..10) emit(IncomingMessage("ping counter: ${++counter}"))
             }
 
-            // why the serialization here does not work at all?
             tcpRequester
                 .route("ping.pong")
                 .data(messageFlow)
                 .retrieveFlow<IncomingMessage>()
                 .test {
-                    val incomingMessage = awaitItem()
-                    println("------ received :$incomingMessage --------")
+                    for (incomingMessages in 0 until 10) {
+                        println("------ received :${awaitItem()} --------")
+                    }
+                    awaitComplete()
                 }
         }
 
