@@ -65,7 +65,6 @@ class KotlinSerializationProtobufEncoder(private val protobufSerializer: ProtoBu
     ): DataBuffer {
         val kSerializer = serializer(valueType.type)
         val byteArray = protobufSerializer.encodeToByteArray(kSerializer, value)
-//        println(byteArray)
         return bufferFactory.wrap(byteArray)
     }
 
@@ -108,6 +107,10 @@ class KotlinSerializationProtobufDecoder(private val protobufSerializer: ProtoBu
         mimeType: MimeType?,
         hints: MutableMap<String, Any>?
     ): Flux<Any> {
+        if (inputStream is Mono) {
+            return Flux.from(decodeToMono(inputStream, elementType, mimeType, hints))
+        }
+
         return inputStream
             .asFlow()
             .map { decodeDelimitedMessage(inputStream, elementType) }

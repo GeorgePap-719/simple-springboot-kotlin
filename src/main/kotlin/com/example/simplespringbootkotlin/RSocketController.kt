@@ -8,6 +8,9 @@ import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.PolymorphicSerializer
+import kotlinx.serialization.builtins.serializer
+import kotlinx.serialization.decodeFromByteArray
+import kotlinx.serialization.encodeToByteArray
 import kotlinx.serialization.modules.SerializersModule
 import kotlinx.serialization.modules.polymorphic
 import kotlinx.serialization.modules.subclass
@@ -18,10 +21,10 @@ import org.springframework.messaging.handler.annotation.Payload as SpringPayload
 
 val protoBufFormat = ProtoBuf {
     serializersModule = SerializersModule {
-
         polymorphic(Payload::class) {
             subclass(PayloadImpl::class, PayloadImpl.serializer())
             polymorphic(Any::class) {
+                subclass(String.serializer())
                 subclass(TestObject1::class, TestObject1.serializer())
                 subclass(IncomingMessage::class, IncomingMessage.serializer())
             }
@@ -42,7 +45,6 @@ val protobufFormatWithT = ProtoBuf {
 }
 
 @Controller
-// no open-poly serialization
 class RSocketController {
     private var counter = 0
 
@@ -74,4 +76,19 @@ class RSocketController {
             }
         }
     }
+
+
+    @MessageMapping("put.open.poly.manually")
+    suspend fun receiveWithOpenPolyManually(@SpringPayload inBoundMessage: ByteArray): ByteArray {
+        val request = protoBufFormat.decodeFromByteArray<Payload>(inBoundMessage)
+        println("received in put: $request")
+        return protoBufFormat.encodeToByteArray(payload("hi back, from open-poly-string", "no error"))
+    }
+
+    @MessageMapping("put.open.poly")
+    suspend fun receiveWithOpenPoly(@SpringPayload inBoundMessage: Payload): Payload {
+        println("received in put: $inBoundMessage")
+        return payload("hi back, from open-poly-string", "no error")
+    }
+
 }

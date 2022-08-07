@@ -9,6 +9,8 @@ import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.ExperimentalSerializationApi
+import kotlinx.serialization.decodeFromByteArray
+import kotlinx.serialization.encodeToByteArray
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
@@ -111,8 +113,43 @@ class TestSerialization(
                     for (incomingMessages in 0 until 10) {
                         println("------ received :${awaitItem()} --------")
                     }
-                    awaitComplete()
+                    awaitComplete() // fails when running all the tests together
                 }
+        }
+
+    }
+
+    @Nested
+    inner class TestSimpleSerializationWithOpenPoly {
+
+        @Test
+        fun `test open-poly-manually in rsocket api put-open-poly`(): Unit = runBlocking {
+            val tcpRequester = rsocketBuilder.tcp("localhost", serverPort.toInt())
+            val payload = payload(IncomingMessage("Hi with manually open-poly"), "no error")
+
+            val response = tcpRequester
+                .route("put.open.poly.manually")
+                .data(protoBufFormat.encodeToByteArray(payload))
+                .retrieveAndAwaitOrNull<ByteArray>()
+
+            response.shouldNotBeNull()
+
+            println("Response: ${protoBufFormat.decodeFromByteArray<Payload>(response)}")
+        }
+
+        @Test
+        fun `test open-poly in rsocket api put-open-poly`(): Unit = runBlocking {
+            val tcpRequester = rsocketBuilder.tcp("localhost", serverPort.toInt())
+            val payload = payload(IncomingMessage("Hi with open-poly"), "no error")
+
+            val response = tcpRequester
+                .route("put.open.poly")
+                .data(payload)
+                .retrieveAndAwaitOrNull<Payload>()
+
+            response.shouldNotBeNull()
+
+            println("Response: $response")
         }
 
     }

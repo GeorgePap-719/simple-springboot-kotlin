@@ -1,17 +1,16 @@
-@file:OptIn(ExperimentalSerializationApi::class)
+@file:OptIn(ExperimentalSerializationApi::class, ExperimentalSerializationApi::class)
 
 package com.example.simplespringbootkotlin.serialization
 
+import com.example.simplespringbootkotlin.protoBufFormat
 import kotlinx.serialization.ExperimentalSerializationApi
-import kotlinx.serialization.protobuf.ProtoBuf
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
-import org.springframework.http.codec.protobuf.ProtobufCodecSupport
 import org.springframework.messaging.rsocket.RSocketStrategies
 import org.springframework.messaging.rsocket.annotation.support.RSocketMessageHandler
 
 @Configuration
-class RSocketConfig : ProtobufCodecSupport() {
+class RSocketConfig {
 
     @Bean
     fun rsocketMessageHandler(strategyForPayload: RSocketStrategies) = RSocketMessageHandler().apply {
@@ -23,13 +22,10 @@ class RSocketConfig : ProtobufCodecSupport() {
     fun strategyForPayload(): RSocketStrategies {
         return RSocketStrategies
             .builder()
-            .encoder(KotlinSerializationProtobufEncoder(ProtoBuf))
-            .decoder(KotlinSerializationProtobufDecoder(ProtoBuf))
+            .encoder(KotlinSerializationProtobufEncoder(protoBufFormat))
+            .decoder(KotlinSerializationProtobufDecoder(protoBufFormat))
 //            .encoder(ProtobufEncoder())
-//            .encoder(KotlinSerializationJsonEncoder())
-//            .encoder(KotlinSerializationJsonEncoder())
 //            .decoder(ProtobufDecoder())
-//            .decoder(KotlinSerializationJsonDecoder)
             .build()
 
     }
