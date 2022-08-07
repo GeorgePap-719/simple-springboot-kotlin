@@ -1,8 +1,9 @@
 @file:OptIn(ExperimentalSerializationApi::class, ExperimentalSerializationApi::class)
 
-package com.example.simplespringbootkotlin.serialization
+package com.example.simplespringbootkotlin
 
-import com.example.simplespringbootkotlin.protoBufFormat
+import com.example.simplespringbootkotlin.serialization.KotlinSerializationProtobufDecoder
+import com.example.simplespringbootkotlin.serialization.KotlinSerializationProtobufEncoder
 import kotlinx.serialization.ExperimentalSerializationApi
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration

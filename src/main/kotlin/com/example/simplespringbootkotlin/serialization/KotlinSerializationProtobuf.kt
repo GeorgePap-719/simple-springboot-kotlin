@@ -8,8 +8,11 @@ import kotlinx.coroutines.reactive.asFlow
 import kotlinx.coroutines.reactive.awaitSingle
 import kotlinx.coroutines.reactor.asFlux
 import kotlinx.coroutines.reactor.mono
-import kotlinx.serialization.*
+import kotlinx.serialization.ExperimentalSerializationApi
+import kotlinx.serialization.KSerializer
+import kotlinx.serialization.decodeFromByteArray
 import kotlinx.serialization.protobuf.ProtoBuf
+import kotlinx.serialization.serializer
 import org.reactivestreams.Publisher
 import org.springframework.core.ResolvableType
 import org.springframework.core.codec.Decoder
@@ -27,9 +30,9 @@ import java.lang.reflect.Type
 private val serializersCache = ConcurrentReferenceHashMap<Type, KSerializer<*>>()
 
 // unused for now
-private fun getSerializer(protobuf: ProtoBuf, type: Type): KSerializer<Any>? =
+private fun getSerializer(protobuf: ProtoBuf, type: Type): KSerializer<Any> =
     serializersCache.getOrPut(type) {
-        protobuf.serializersModule.serializerOrNull(type) ?: return null
+        protobuf.serializersModule.serializer(type)
     }.cast()
 
 @Suppress("UNCHECKED_CAST", "NOTHING_TO_INLINE")
@@ -64,8 +67,7 @@ class KotlinSerializationProtobufEncoder(private val protobufSerializer: ProtoBu
         hints: MutableMap<String, Any>?
     ): DataBuffer {
         val kSerializer = serializer(valueType.type)
-        val byteArray = protobufSerializer.encodeToByteArray(kSerializer, value)
-        return bufferFactory.wrap(byteArray)
+        return protobufSerializer.encodeToByteArray(kSerializer, value, bufferFactory)
     }
 
     //https://developers.google.com/protocol-buffers/docs/techniques?hl=en#streaming
@@ -167,7 +169,7 @@ class KotlinSerializationProtobufDecoder(private val protobufSerializer: ProtoBu
         hints: MutableMap<String, Any>?
     ): Any {
         val kSerializer = serializer(targetType.type)
-        return protobufSerializer.decodeFromByteArray(kSerializer, buffer.asInputStream().readBytes())
+        return protobufSerializer.decodeFromByteArray(kSerializer, buffer)
     }
 
     override fun getDecodableMimeTypes(): MutableList<MimeType> {
