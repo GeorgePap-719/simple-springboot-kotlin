@@ -142,7 +142,7 @@ class TestSerialization(
         @Test
         fun `test open-poly in rsocket api put-open-poly`(): Unit = runBlocking {
             val tcpRequester = rsocketBuilder.tcp("localhost", serverPort.toInt())
-            val payload = payload(IncomingMessage("Hi with open-poly"), "no error")
+            val payload = payload("Hi with open-poly", "no error")
 
             val response = tcpRequester
                 .route("put.open.poly")

@@ -2,12 +2,16 @@
 
 package com.example.simplespringbootkotlin.serialization
 
+import kotlinx.coroutines.reactive.awaitSingle
+import kotlinx.coroutines.reactor.mono
 import kotlinx.serialization.DeserializationStrategy
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.SerializationStrategy
 import kotlinx.serialization.protobuf.ProtoBuf
+import org.reactivestreams.Publisher
 import org.springframework.core.io.buffer.DataBuffer
 import org.springframework.core.io.buffer.DataBufferFactory
+import reactor.core.publisher.Mono
 
 fun <T> ProtoBuf.encodeToByteArray(
     serializer: SerializationStrategy<T>,
@@ -22,3 +26,10 @@ fun <T> ProtoBuf.decodeFromByteArray(
     deserializer: DeserializationStrategy<T>,
     dataBuffer: DataBuffer
 ): T = decodeFromByteArray(deserializer, dataBuffer.asInputStream().readAllBytes())
+
+fun <T> ProtoBuf.decodeFromByteArrayToMono(
+    deserializer: DeserializationStrategy<T>,
+    inputStream: Publisher<DataBuffer>
+): Mono<T> = mono {
+    decodeFromByteArray(deserializer, inputStream.awaitSingle())
+}

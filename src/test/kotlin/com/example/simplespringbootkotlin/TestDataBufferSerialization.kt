@@ -3,7 +3,12 @@
 package com.example.simplespringbootkotlin
 
 import com.example.simplespringbootkotlin.serialization.decodeFromByteArray
+import com.example.simplespringbootkotlin.serialization.decodeFromByteArrayToMono
 import com.example.simplespringbootkotlin.serialization.encodeToByteArray
+import io.kotest.matchers.shouldBe
+import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.reactive.asPublisher
+import kotlinx.coroutines.reactor.awaitSingle
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.KSerializer
@@ -35,6 +40,7 @@ internal class TestDataBufferSerialization {
         val deserializedResult = proto.decodeFromByteArray(stringSerializer, buffer)
 
         println("Result: $deserializedResult")
+        deserializedResult shouldBe input
     }
 
     @Test
@@ -51,6 +57,7 @@ internal class TestDataBufferSerialization {
         val deserializedResult = proto.decodeFromByteArray(stringSerializer, buffer)
 
         println("Result: $deserializedResult")
+        deserializedResult shouldBe input
     }
 
     @Test
@@ -67,12 +74,32 @@ internal class TestDataBufferSerialization {
         val deserializedResult = proto.decodeFromByteArray(stringSerializer, buffer)
 
         println("Result: $deserializedResult")
+        deserializedResult shouldBe input
     }
 
     private fun getSerializer(protobuf: ProtoBuf, type: Type): KSerializer<Any> =
         serializersCache.getOrPut(type) {
             protobuf.serializersModule.serializer(type)
         }.cast()
+
+    @Test
+    fun `should be able to de-serialize with open-poly to mono`(): Unit = runBlocking {
+        val proto = protoBufFormat
+
+        val type: ResolvableType = ResolvableType.forType(Payload::class.java)
+        val factory: DataBufferFactory = DefaultDataBufferFactory()
+        val input = payload("Hello dataBuffers", "no error")
+
+        val stringSerializer = proto.serializersModule.serializer(type.type)
+        val buffer = proto.encodeToByteArray(stringSerializer, input, factory)
+        val inputStream = flowOf(buffer).asPublisher(this.coroutineContext)
+
+        val deserializedResult = proto.decodeFromByteArrayToMono(stringSerializer, inputStream)
+
+        val result = deserializedResult.awaitSingle()
+        println("Result: $result")
+        result shouldBe input
+    }
 }
 
 @Suppress("UNCHECKED_CAST", "NOTHING_TO_INLINE")

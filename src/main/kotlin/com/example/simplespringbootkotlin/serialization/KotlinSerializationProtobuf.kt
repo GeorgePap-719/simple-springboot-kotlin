@@ -7,7 +7,6 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.reactive.asFlow
 import kotlinx.coroutines.reactive.awaitSingle
 import kotlinx.coroutines.reactor.asFlux
-import kotlinx.coroutines.reactor.mono
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.decodeFromByteArray
@@ -155,13 +154,10 @@ class KotlinSerializationProtobufDecoder(private val protobufSerializer: ProtoBu
         mimeType: MimeType?,
         hints: MutableMap<String, Any>?
     ): Mono<Any> {
-        return mono {
-            val kSerializer = getSerializer(protobufSerializer, elementType.type)
-            val dataBuffer = inputStream.awaitSingle()
-            //TODO: expose API for Publisher<DataBuffer>
-            protobufSerializer.decodeFromByteArray(kSerializer, dataBuffer)
-        }
+        val kSerializer = getSerializer(protobufSerializer, elementType.type)
+        return protobufSerializer.decodeFromByteArrayToMono(kSerializer, inputStream)
     }
+
 
     override fun decode(
         buffer: DataBuffer,
