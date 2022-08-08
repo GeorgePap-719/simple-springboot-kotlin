@@ -13,6 +13,7 @@ import kotlinx.serialization.decodeFromByteArray
 import kotlinx.serialization.encodeToByteArray
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.TestInstance
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.rsocket.context.LocalRSocketServerPort
 import org.springframework.boot.test.context.SpringBootTest
@@ -21,6 +22,7 @@ import org.springframework.messaging.rsocket.retrieveAndAwaitOrNull
 import org.springframework.messaging.rsocket.retrieveFlow
 
 @SpringBootTest
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 // custom codec support
 class TestSerialization(
     @Autowired

@@ -66,7 +66,7 @@ class KotlinSerializationProtobufEncoder(private val protobufSerializer: ProtoBu
         mimeType: MimeType?,
         hints: MutableMap<String, Any>?
     ): DataBuffer {
-        val kSerializer = serializer(valueType.type)
+        val kSerializer = getSerializer(protobufSerializer, valueType.type)
         return protobufSerializer.encodeToByteArray(kSerializer, value, bufferFactory)
     }
 
@@ -168,7 +168,7 @@ class KotlinSerializationProtobufDecoder(private val protobufSerializer: ProtoBu
         mimeType: MimeType?,
         hints: MutableMap<String, Any>?
     ): Any {
-        val kSerializer = serializer(targetType.type)
+        val kSerializer = getSerializer(protobufSerializer, targetType.type)
         return protobufSerializer.decodeFromByteArray(kSerializer, buffer)
     }
 
