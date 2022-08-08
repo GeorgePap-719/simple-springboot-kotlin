@@ -83,6 +83,12 @@ internal class TestDataBufferSerialization {
             protobuf.serializersModule.serializer(type)
         }.cast()
 
+    @Suppress("UNCHECKED_CAST", "NOTHING_TO_INLINE")
+    private inline fun KSerializer<*>.cast(): KSerializer<Any> {
+        return this as KSerializer<Any>
+    }
+
+
     @Test
     fun `should be able to de-serialize with open-poly to mono`(): Unit = runBlocking {
         val proto = protoBufFormat
@@ -103,9 +109,5 @@ internal class TestDataBufferSerialization {
     }
 }
 
-@Suppress("UNCHECKED_CAST", "NOTHING_TO_INLINE")
-private inline fun KSerializer<*>.cast(): KSerializer<Any> {
-    return this as KSerializer<Any>
-}
 
 
