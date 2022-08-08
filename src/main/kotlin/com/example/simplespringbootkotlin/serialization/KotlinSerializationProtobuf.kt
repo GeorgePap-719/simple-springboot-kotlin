@@ -156,9 +156,10 @@ class KotlinSerializationProtobufDecoder(private val protobufSerializer: ProtoBu
         hints: MutableMap<String, Any>?
     ): Mono<Any> {
         return mono {
-            val kSerializer = serializer(elementType.type)
+            val kSerializer = getSerializer(protobufSerializer, elementType.type)
             val dataBuffer = inputStream.awaitSingle()
-            protobufSerializer.decodeFromByteArray(kSerializer, dataBuffer.asInputStream().readBytes())
+            //TODO: expose API for Publisher<DataBuffer>
+            protobufSerializer.decodeFromByteArray(kSerializer, dataBuffer)
         }
     }
 
