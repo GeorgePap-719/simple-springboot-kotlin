@@ -30,3 +30,6 @@ data class PayloadTImpl<T>(override val data: T, override val error: String) : P
 fun <T> payloadT(data: T, error: String): PayloadWithT<T> {
     return PayloadTImpl(data, error)
 }
+
+@Serializable
+data class IncomingMessage(val data: String)

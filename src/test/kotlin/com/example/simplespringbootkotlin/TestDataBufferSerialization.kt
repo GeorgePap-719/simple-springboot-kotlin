@@ -74,6 +74,7 @@ internal class TestDataBufferSerialization {
         val deserializedResult = proto.decodeFromByteArray(stringSerializer, buffer)
 
         println("Result: $deserializedResult")
+        println("Type: $type")
         deserializedResult shouldBe input
     }
 

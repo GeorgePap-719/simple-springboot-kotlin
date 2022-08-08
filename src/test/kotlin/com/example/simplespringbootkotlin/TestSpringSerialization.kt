@@ -24,7 +24,7 @@ import org.springframework.messaging.rsocket.retrieveFlow
 @SpringBootTest
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 // custom codec support
-class TestSerialization(
+class TestSpringSerialization(
     @Autowired
     private val rsocketBuilder: RSocketRequester.Builder,
     @LocalRSocketServerPort
