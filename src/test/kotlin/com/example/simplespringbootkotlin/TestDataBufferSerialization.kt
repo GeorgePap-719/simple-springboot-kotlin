@@ -16,13 +16,30 @@ import org.springframework.core.io.buffer.DefaultDataBufferFactory
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 internal class TestDataBufferSerialization {
-    private val proto = ProtoBuf
 
     @Test
     fun `should be able to serialize`(): Unit = runBlocking {
+        val proto = ProtoBuf
+
         val type: ResolvableType = ResolvableType.forType(String::class.java)
         val factory: DataBufferFactory = DefaultDataBufferFactory()
         val input = "Hello dataBuffers"
+
+        val stringSerializer = proto.serializersModule.serializer(type.type)
+        val buffer = proto.encodeToByteArray(stringSerializer, input, factory)
+
+        val deserializedResult = proto.decodeFromByteArray(stringSerializer, buffer)
+
+        println("Result: $deserializedResult")
+    }
+
+    @Test
+    fun `should be able to serialize with open-poly with no generics`(): Unit = runBlocking {
+        val proto = protoBufFormat
+
+        val type: ResolvableType = ResolvableType.forType(Payload::class.java)
+        val factory: DataBufferFactory = DefaultDataBufferFactory()
+        val input = payload("Hello dataBuffers", "no error")
 
         val stringSerializer = proto.serializersModule.serializer(type.type)
         val buffer = proto.encodeToByteArray(stringSerializer, input, factory)
