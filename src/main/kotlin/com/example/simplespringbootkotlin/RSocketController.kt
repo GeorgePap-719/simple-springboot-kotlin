@@ -47,6 +47,7 @@ val protobufFormatWithT = ProtoBuf {
 @Controller
 class RSocketController {
     private var counter = 0
+    private var openPolyCounter = 0
 
     @MessageMapping("put")
     suspend fun receive(@SpringPayload inBoundMessage: IncomingMessage) {
@@ -89,6 +90,19 @@ class RSocketController {
     suspend fun receiveWithOpenPoly(@SpringPayload inBoundMessage: Payload): Payload {
         println("received in put: $inBoundMessage")
         return payload("hi back, from open-poly-string", "no error")
+    }
+
+    @MessageMapping("ping.pong.open.poly")
+    suspend fun pingPongWithOpenPoly(@SpringPayload inBoundMessage: Flow<Payload>): Flow<Payload> {
+        println("received in put: $inBoundMessage")
+        return flow {
+            inBoundMessage.collect {
+                if (openPolyCounter == 10) return@collect
+                openPolyCounter++
+                println("received: $it")
+                emit(payload("hi back, from open-poly-pong-$openPolyCounter", "no error"))
+            }
+        }
     }
 
 }

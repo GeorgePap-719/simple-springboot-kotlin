@@ -146,6 +146,8 @@ class TestSpringSerialization(
             val tcpRequester = rsocketBuilder.tcp("localhost", serverPort.toInt())
             val payload = payload("Hi with open-poly", "no error")
 
+            // Inside encodeValue for type: class com.example.simplespringbootkotlin.PayloadImpl
+            // Inside decode for type: interface com.example.simplespringbootkotlin.Payload
             val response = tcpRequester
                 .route("put.open.poly")
                 .data(payload)// no reified, and the type is converted to PayloadImpl which makes serialization to fail
@@ -161,8 +163,6 @@ class TestSpringSerialization(
             val tcpRequester = rsocketBuilder.tcp("localhost", serverPort.toInt())
             val payload: Payload = payload("Hi with open-poly", "no error")
 
-            // Inside encodeValue for type: class com.example.simplespringbootkotlin.PayloadImpl
-            // Inside decode for type: interface com.example.simplespringbootkotlin.Payload
             val payloadPublisher = mono { payload }
             val response = tcpRequester
                 .route("put.open.poly")
@@ -170,8 +170,26 @@ class TestSpringSerialization(
                 .retrieveAndAwaitOrNull<Payload>()
 
             response.shouldNotBeNull()
-
             println("Response: $response")
+        }
+
+        @Test
+        fun `test ping-pong open-poly in rsocket api put-open-poly with explicit type`(): Unit = runBlocking {
+            val tcpRequester = rsocketBuilder.tcp("localhost", serverPort.toInt())
+            var counter = 0
+            val payloadFlow = flow {
+                for (i in 0..10) emit(payload("Hi with open-poly ping counter: ${++counter}", "no error"))
+            }
+
+            tcpRequester
+                .route("ping.pong.open.poly")
+                .dataWithType(payloadFlow)// with reified help, the type is working properly
+                .retrieveFlow<Payload>().test {
+                    for (incomingMessages in 0 until 10) {
+                        println("------ received :${awaitItem()} --------")
+                    }
+                    awaitComplete() // fails when running all the tests together
+                }
         }
 
     }
