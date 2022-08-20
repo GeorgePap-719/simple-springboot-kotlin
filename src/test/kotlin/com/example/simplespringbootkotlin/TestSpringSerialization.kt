@@ -7,6 +7,7 @@ import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.reactor.mono
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.decodeFromByteArray
@@ -18,6 +19,7 @@ import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.rsocket.context.LocalRSocketServerPort
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.messaging.rsocket.RSocketRequester
+import org.springframework.messaging.rsocket.dataWithType
 import org.springframework.messaging.rsocket.retrieveAndAwaitOrNull
 import org.springframework.messaging.rsocket.retrieveFlow
 
@@ -139,14 +141,14 @@ class TestSpringSerialization(
             println("Response: ${protoBufFormat.decodeFromByteArray<Payload>(response)}")
         }
 
-        @Test // not working
+        //@Test // not working
         fun `test open-poly in rsocket api put-open-poly`(): Unit = runBlocking {
             val tcpRequester = rsocketBuilder.tcp("localhost", serverPort.toInt())
             val payload = payload("Hi with open-poly", "no error")
 
             val response = tcpRequester
                 .route("put.open.poly")
-                .data(payload)
+                .data(payload)// no reified, and the type is converted to PayloadImpl which makes serialization to fail
                 .retrieveAndAwaitOrNull<Payload>()
 
             response.shouldNotBeNull()
@@ -154,15 +156,18 @@ class TestSpringSerialization(
             println("Response: $response")
         }
 
-        @Test // not working
+        @Test
         fun `test open-poly in rsocket api put-open-poly with explicit type`(): Unit = runBlocking {
             val tcpRequester = rsocketBuilder.tcp("localhost", serverPort.toInt())
             val payload: Payload = payload("Hi with open-poly", "no error")
 
+            // Inside encodeValue for type: class com.example.simplespringbootkotlin.PayloadImpl
+            // Inside decode for type: interface com.example.simplespringbootkotlin.Payload
+            val payloadPublisher = mono { payload }
             val response = tcpRequester
                 .route("put.open.poly")
-                .data(payload)
-                .retrieveAndAwaitOrNull<PayloadImpl>()
+                .dataWithType(payloadPublisher)// with reified help, the type is working properly
+                .retrieveAndAwaitOrNull<Payload>()
 
             response.shouldNotBeNull()
 

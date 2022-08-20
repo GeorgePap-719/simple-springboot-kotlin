@@ -122,21 +122,48 @@ internal class TestDataBufferSerialization {
         deserializedResult shouldBe input
     }
 
+    // Inside encodeValue for type: class com.example.simplespringbootkotlin.PayloadImpl
+    // Inside decode for type: interface com.example.simplespringbootkotlin.Payload
     @Test
     fun `test generic reflection`(): Unit = runBlocking {
-//        val proto = protoBufFormat
-//        val type: ResolvableType = ResolvableType.forType(Payload::class.java)
-//        val factory: DataBufferFactory = DefaultDataBufferFactory()
-//        val input: Payload = payload("Hello dataBuffers", "no error")
-//
-//        val stringSerializer = getSerializer(proto, type.type)
-//        val buffer = proto.encodeToByteArray(stringSerializer, input, factory)
-//        val deserializedResult = proto.decodeFromByteArray(stringSerializer, buffer)
-//
-//        println("Result: $deserializedResult")
-//        println("Type: $type")
-//        deserializedResult shouldBe input
-        TODO()
+        val proto = protoBufFormat
+        val type: ResolvableType = ResolvableType.forType(Payload::class.java)
+        val typeImpl: ResolvableType = ResolvableType.forType(PayloadImpl::class.java)
+        val factory: DataBufferFactory = DefaultDataBufferFactory()
+        val input: Payload = payload("Hello dataBuffers", "no error")
+
+        val stringImplSerializer = getSerializer(proto, typeImpl.type)
+        val buffer = proto.encodeToByteArray(stringImplSerializer, input, factory)
+
+        val stringSerializer = getSerializer(proto, type.type)
+        val deserializedResult = proto.decodeFromByteArray(stringSerializer, buffer)
+
+        println("Result: $deserializedResult")
+        // Type: com.example.simplespringbootkotlin.Payload
+        println("Type: $type")
+        deserializedResult shouldBe input
+    }
+
+    @Test
+    fun `test generic reflection2`(): Unit = runBlocking {
+        val proto = protoBufFormat
+        val type: ResolvableType = ResolvableType.forType(Payload::class.java)
+        val typeImpl: ResolvableType = ResolvableType.forType(PayloadImpl::class.java)
+        val factory: DataBufferFactory = DefaultDataBufferFactory()
+        val input: Payload = payload("Hello dataBuffers", "no error")
+
+        println(input::class.javaObjectType.typeName)
+
+//        val stringImplSerializer = getSerializer(proto, typeImpl.type)
+        val buffer = proto.encodeToByteArray(proto.serializersModule.serializer(), input, factory)
+
+        val stringSerializer = getSerializer(proto, type.type)
+        val deserializedResult = proto.decodeFromByteArray(stringSerializer, buffer)
+
+        println("Result: $deserializedResult")
+        // Type: com.example.simplespringbootkotlin.Payload
+        println("Type: $type")
+        deserializedResult shouldBe input
     }
 }
 

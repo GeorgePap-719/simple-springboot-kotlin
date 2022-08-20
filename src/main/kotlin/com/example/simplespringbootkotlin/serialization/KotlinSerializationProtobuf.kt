@@ -64,7 +64,7 @@ class KotlinSerializationProtobufEncoder(
         val buffer = bufferFactory.allocateBuffer()
         val serializedSize = encodedByteArray.size
         val outputStream = buffer.asOutputStream()
-        outputStream.write(serializedSize) // write first size of message in stream then write the actul message
+        outputStream.write(serializedSize) // write first size of message in stream then write the actual message
         outputStream.write(encodedByteArray)
         outputStream.flush()
         return buffer
