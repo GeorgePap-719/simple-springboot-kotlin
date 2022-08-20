@@ -2,25 +2,22 @@
 
 package com.example.simplespringbootkotlin.serialization
 
-import io.rsocket.metadata.WellKnownMimeType
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.reactive.asFlow
 import kotlinx.coroutines.reactive.awaitSingle
 import kotlinx.coroutines.reactor.asFlux
-import kotlinx.serialization.ExperimentalSerializationApi
-import kotlinx.serialization.KSerializer
-import kotlinx.serialization.decodeFromByteArray
+import kotlinx.serialization.*
 import kotlinx.serialization.protobuf.ProtoBuf
-import kotlinx.serialization.serializer
 import org.reactivestreams.Publisher
 import org.springframework.core.ResolvableType
 import org.springframework.core.codec.Decoder
-import org.springframework.core.codec.Encoder
 import org.springframework.core.io.buffer.DataBuffer
 import org.springframework.core.io.buffer.DataBufferFactory
+import org.springframework.http.MediaType
+import org.springframework.http.codec.HttpMessageEncoder
+import org.springframework.http.codec.protobuf.ProtobufCodecSupport
 import org.springframework.util.ConcurrentReferenceHashMap
 import org.springframework.util.MimeType
-import org.springframework.util.MimeTypeUtils
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
 import java.lang.reflect.Type
@@ -37,10 +34,11 @@ private inline fun KSerializer<*>.cast(): KSerializer<Any> {
     return this as KSerializer<Any>
 }
 
-class KotlinSerializationProtobufEncoder(private val protobufSerializer: ProtoBuf = ProtoBuf) : Encoder<Any> {
-    override fun canEncode(elementType: ResolvableType, mimeType: MimeType?): Boolean {
-        return supportsMimeType(mimeType)
-    }
+class KotlinSerializationProtobufEncoder(
+    private val protobufSerializer: ProtoBuf = ProtoBuf
+) : ProtobufCodecSupport(), HttpMessageEncoder<Any> {
+    override fun canEncode(elementType: ResolvableType, mimeType: MimeType?): Boolean =
+        serializerOrNull(elementType.type) != null && supportsMimeType(mimeType)
 
     override fun encode(
         inputStream: Publisher<out Any>,
@@ -84,20 +82,22 @@ class KotlinSerializationProtobufEncoder(private val protobufSerializer: ProtoBu
         return protobufSerializer.encodeToByteArray(kSerializer, value, bufferFactory)
     }
 
+    override fun getEncodableMimeTypes(): MutableList<MimeType> = mimeTypes
 
-    override fun getEncodableMimeTypes(): MutableList<MimeType> {
-        return mimeTypes.toMutableList()
-    }
+    override fun getStreamingMediaTypes(): MutableList<MediaType> = _mimeTypes.map {
+        MediaType(it.type, it.subtype, mapOf(DELIMITED_KEY to DELIMITED_VALUE))
+    }.toMutableList()
 }
 
 
-class KotlinSerializationProtobufDecoder(private val protobufSerializer: ProtoBuf = ProtoBuf) : Decoder<Any> {
+class KotlinSerializationProtobufDecoder(
+    private val protobufSerializer: ProtoBuf = ProtoBuf
+) : ProtobufCodecSupport(), Decoder<Any> {
     // default max size for aggregating messages.
     private val maxMessageSize = 256 * 1024
 
-    override fun canDecode(elementType: ResolvableType, mimeType: MimeType?): Boolean {
-        return supportsMimeType(mimeType)
-    }
+    override fun canDecode(elementType: ResolvableType, mimeType: MimeType?): Boolean =
+        serializerOrNull(elementType.type) != null && supportsMimeType(mimeType)
 
     override fun decode(
         inputStream: Publisher<DataBuffer>,
@@ -154,20 +154,18 @@ class KotlinSerializationProtobufDecoder(private val protobufSerializer: ProtoBu
         return protobufSerializer.decodeFromByteArray(kSerializer, buffer)
     }
 
-    override fun getDecodableMimeTypes(): MutableList<MimeType> {
-        return mimeTypes.toMutableList()
-    }
+    override fun getDecodableMimeTypes(): MutableList<MimeType> = mimeTypes
 }
 
-private val mimeTypes = listOf(
+@Suppress("ObjectPropertyName") // cannot access 'MIME_TYPES', it is package-private
+private val _mimeTypes = listOf(
     MimeType("application", "x-protobuf"),
     MimeType("application", "octet-stream"),
-    MimeType("application", "vnd.google.protobuf"),
-    MimeTypeUtils.parseMimeType(WellKnownMimeType.MESSAGE_RSOCKET_COMPOSITE_METADATA.string)
+    MimeType("application", "vnd.google.protobuf")
+//    MimeTypeUtils.parseMimeType(WellKnownMimeType.MESSAGE_RSOCKET_COMPOSITE_METADATA.string) TODO: is this needed?
 )
 
-private fun supportsMimeType(mimeType: MimeType?): Boolean {
-    return mimeType?.isPresentIn(mimeTypes) ?: false
-}
+private const val DELIMITED_KEY = "delimited" //cannot access 'DELIMITED_KEY', it is package-private
 
+private const val DELIMITED_VALUE = "true" //cannot access 'DELIMITED_VALUE', it is package-private
 
