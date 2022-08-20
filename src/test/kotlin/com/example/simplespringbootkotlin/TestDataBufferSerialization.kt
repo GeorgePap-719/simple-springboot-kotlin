@@ -63,13 +63,11 @@ internal class TestDataBufferSerialization {
     @Test
     fun `should be able to serialize with open-poly with cache`(): Unit = runBlocking {
         val proto = protoBufFormat
-
         val type: ResolvableType = ResolvableType.forType(Payload::class.java)
         val factory: DataBufferFactory = DefaultDataBufferFactory()
         val input = payload("Hello dataBuffers", "no error")
 
         val stringSerializer = getSerializer(proto, type.type)
-
         val buffer = proto.encodeToByteArray(stringSerializer, input, factory)
         val deserializedResult = proto.decodeFromByteArray(stringSerializer, buffer)
 
@@ -106,6 +104,39 @@ internal class TestDataBufferSerialization {
         val result = deserializedResult.awaitSingle()
         println("Result: $result")
         result shouldBe input
+    }
+
+    @Test
+    fun `should be able to serialize with open-poly with cache and explicit types`(): Unit = runBlocking {
+        val proto = protoBufFormat
+        val type: ResolvableType = ResolvableType.forType(Payload::class.java)
+        val factory: DataBufferFactory = DefaultDataBufferFactory()
+        val input: Payload = payload("Hello dataBuffers", "no error")
+
+        val stringSerializer = getSerializer(proto, type.type)
+        val buffer = proto.encodeToByteArray(stringSerializer, input, factory)
+        val deserializedResult = proto.decodeFromByteArray(stringSerializer, buffer)
+
+        println("Result: $deserializedResult")
+        println("Type: $type")
+        deserializedResult shouldBe input
+    }
+
+    @Test
+    fun `test generic reflection`(): Unit = runBlocking {
+//        val proto = protoBufFormat
+//        val type: ResolvableType = ResolvableType.forType(Payload::class.java)
+//        val factory: DataBufferFactory = DefaultDataBufferFactory()
+//        val input: Payload = payload("Hello dataBuffers", "no error")
+//
+//        val stringSerializer = getSerializer(proto, type.type)
+//        val buffer = proto.encodeToByteArray(stringSerializer, input, factory)
+//        val deserializedResult = proto.decodeFromByteArray(stringSerializer, buffer)
+//
+//        println("Result: $deserializedResult")
+//        println("Type: $type")
+//        deserializedResult shouldBe input
+        TODO()
     }
 }
 

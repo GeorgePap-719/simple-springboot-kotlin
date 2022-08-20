@@ -11,6 +11,7 @@ import kotlinx.serialization.protobuf.ProtoBuf
 import org.reactivestreams.Publisher
 import org.springframework.core.io.buffer.DataBuffer
 import org.springframework.core.io.buffer.DataBufferFactory
+import org.springframework.core.io.buffer.DataBufferUtils
 import reactor.core.publisher.Mono
 
 fun <T> ProtoBuf.encodeToByteArray(
@@ -25,7 +26,13 @@ fun <T> ProtoBuf.encodeToByteArray(
 fun <T> ProtoBuf.decodeFromByteArray(
     deserializer: DeserializationStrategy<T>,
     dataBuffer: DataBuffer
-): T = decodeFromByteArray(deserializer, dataBuffer.asInputStream().readAllBytes())
+): T {
+    try {
+        return decodeFromByteArray(deserializer, dataBuffer.asInputStream().readAllBytes())
+    } finally {
+        DataBufferUtils.release(dataBuffer)
+    }
+}
 
 fun <T> ProtoBuf.decodeFromByteArrayToMono(
     deserializer: DeserializationStrategy<T>,

@@ -139,7 +139,7 @@ class TestSpringSerialization(
             println("Response: ${protoBufFormat.decodeFromByteArray<Payload>(response)}")
         }
 
-        @Test
+        @Test // not working
         fun `test open-poly in rsocket api put-open-poly`(): Unit = runBlocking {
             val tcpRequester = rsocketBuilder.tcp("localhost", serverPort.toInt())
             val payload = payload("Hi with open-poly", "no error")
@@ -148,6 +148,21 @@ class TestSpringSerialization(
                 .route("put.open.poly")
                 .data(payload)
                 .retrieveAndAwaitOrNull<Payload>()
+
+            response.shouldNotBeNull()
+
+            println("Response: $response")
+        }
+
+        @Test // not working
+        fun `test open-poly in rsocket api put-open-poly with explicit type`(): Unit = runBlocking {
+            val tcpRequester = rsocketBuilder.tcp("localhost", serverPort.toInt())
+            val payload: Payload = payload("Hi with open-poly", "no error")
+
+            val response = tcpRequester
+                .route("put.open.poly")
+                .data(payload)
+                .retrieveAndAwaitOrNull<PayloadImpl>()
 
             response.shouldNotBeNull()
 
