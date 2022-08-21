@@ -1,5 +1,7 @@
 package com.example.simplespringbootkotlin.serialization
 
+import kotlinx.serialization.protobuf.ProtoBuf
+import org.springframework.core.io.buffer.DataBuffer
 import java.io.BufferedOutputStream
 import java.io.OutputStream
 
@@ -66,5 +68,29 @@ fun BufferedOutputStream.writeUInt32NoTag(size: Int) {
         }
     } catch (outOfBounds: IndexOutOfBoundsException) {
         throw IllegalArgumentException(outOfBounds)
+    }
+}
+
+private class ProtobufDataBufferDecoder(
+    val dataBuffer: DataBuffer,
+    private val protobuf: ProtoBuf,
+    private val messageSize: Int = DEFAULT_MESSAGE_MAX_SIZE
+) {
+    private var offset: Int = 0
+    private var messageBytesToRead: Int = 0
+
+
+    // similar impl to readMessageSize from ProtobufDecoder.java
+    private fun readMessageSize(input: DataBuffer): Boolean {
+        TODO()
+    }
+
+    private fun decodeDelimitedMessage() {
+        TODO()
+    }
+
+    companion object {
+        private const val DEFAULT_MESSAGE_MAX_SIZE = 256 * 1024
+
     }
 }
