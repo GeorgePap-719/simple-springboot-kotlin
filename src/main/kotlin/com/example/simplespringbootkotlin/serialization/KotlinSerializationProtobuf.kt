@@ -106,17 +106,21 @@ class KotlinSerializationProtobufDecoder(
         inputStream: Publisher<DataBuffer>,
         valueType: ResolvableType
     ): Any {
-        val kSerializer = getSerializer(protobufSerializer, valueType.type)
         val dataBuffer = inputStream.awaitSingle()
-        // read first byte for getting the message size.
-        val byte = dataBuffer.read()
-        val byteArray = ByteArray(1)
-        byteArray[0] = byte
-        val bytesSizeToRead = protobufSerializer.decodeFromByteArray<Int>(byteArray)
-        val bytesToWrite = ByteArray(bytesSizeToRead)
-        dataBuffer.read(byteArray, 0, bytesSizeToRead)
-        // use the serializer for the rest bytes.
-        return protobufSerializer.decodeFromByteArray(kSerializer, bytesToWrite)
+        try {
+            val kSerializer = getSerializer(protobufSerializer, valueType.type)
+            // read first byte for getting the message size.
+            val byte = dataBuffer.read()
+            val byteArray = ByteArray(1)
+            byteArray[0] = byte
+            val bytesSizeToRead = protobufSerializer.decodeFromByteArray<Int>(byteArray)
+            val bytesToWrite = ByteArray(bytesSizeToRead)
+            dataBuffer.read(byteArray, 0, bytesSizeToRead)
+            // use the serializer for the rest bytes.
+            return protobufSerializer.decodeFromByteArray(kSerializer, bytesToWrite)
+        } finally {
+            DataBufferUtils.release(dataBuffer)
+        }
     }
 
     override fun decodeToMono(
@@ -125,7 +129,6 @@ class KotlinSerializationProtobufDecoder(
         mimeType: MimeType?,
         hints: MutableMap<String, Any>?
     ): Mono<Any> {
-        println("Inside decodeTo mono for type: ${elementType.type}")
         val kSerializer = getSerializer(protobufSerializer, elementType.type)
         return protobufSerializer.decodeFromByteArrayToMono(kSerializer, inputStream)
     }
@@ -136,7 +139,6 @@ class KotlinSerializationProtobufDecoder(
         mimeType: MimeType?,
         hints: MutableMap<String, Any>?
     ): Any {
-//        println("Inside decode for type: ${targetType.type}")
         val kSerializer = getSerializer(protobufSerializer, targetType.type)
         return protobufSerializer.decodeFromByteArray(kSerializer, buffer)
     }
@@ -161,7 +163,6 @@ private val _mimeTypes = listOf(
     MimeType("application", "x-protobuf"),
     MimeType("application", "octet-stream"),
     MimeType("application", "vnd.google.protobuf")
-//    MimeTypeUtils.parseMimeType(WellKnownMimeType.MESSAGE_RSOCKET_COMPOSITE_METADATA.string) TODO: is this needed?
 )
 
 private const val DELIMITED_KEY = "delimited" //cannot access 'DELIMITED_KEY', it is package-private

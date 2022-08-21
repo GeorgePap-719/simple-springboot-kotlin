@@ -25,6 +25,8 @@ fun <T> ProtoBuf.encodeToByteArray(
     return dataBufferFactory.wrap(protoBytes)
 }
 
+// does not propagate exceptions like ProtobufDecoder.java
+// for a more unified message error handling.
 fun <T> ProtoBuf.decodeFromByteArray(
     deserializer: DeserializationStrategy<T>,
     dataBuffer: DataBuffer
