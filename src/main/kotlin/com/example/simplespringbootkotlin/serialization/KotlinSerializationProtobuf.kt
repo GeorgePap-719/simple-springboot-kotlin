@@ -169,7 +169,8 @@ private const val DELIMITED_KEY = "delimited" //cannot access 'DELIMITED_KEY', i
 
 private const val DELIMITED_VALUE = "true" //cannot access 'DELIMITED_VALUE', it is package-private
 
-private inline fun <D : DataBuffer, R> D.use(block: (D) -> R): R {
+//TODO: limit the scope as much as possible
+inline fun <D : DataBuffer, R> D.use(block: (D) -> R): R {
     return try {
         block(this)
     } catch (ioException: IOException) {
