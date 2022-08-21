@@ -20,6 +20,8 @@ fun <T> ProtoBuf.encodeToByteArray(
     dataBufferFactory: DataBufferFactory
 ): DataBuffer {
     val protoBytes = encodeToByteArray(serializer, value)
+    // we use wrap() here which does now allocate new memory, that's
+    // why we do not need DataBufferUtils.release(buffer).
     return dataBufferFactory.wrap(protoBytes)
 }
 
