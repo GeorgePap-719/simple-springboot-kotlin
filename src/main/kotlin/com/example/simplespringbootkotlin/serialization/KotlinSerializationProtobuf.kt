@@ -96,8 +96,10 @@ class KotlinSerializationProtobufDecoder(
         if (inputStream is Mono) {
             return Flux.from(decodeToMono(inputStream, elementType, mimeType, hints))
         }
+        //prototype transform { readMessages().forEach { emit(it) } }
         return inputStream
             .asFlow()
+            //TODO: when impl changes then use transform operator
             .map { decodeDelimitedMessage(inputStream, elementType) }
             .asFlux()
     }

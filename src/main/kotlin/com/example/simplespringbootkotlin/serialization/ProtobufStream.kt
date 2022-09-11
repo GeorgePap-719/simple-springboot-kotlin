@@ -1,6 +1,7 @@
 package com.example.simplespringbootkotlin.serialization
 
 import kotlinx.serialization.protobuf.ProtoBuf
+import org.springframework.core.codec.DecodingException
 import org.springframework.core.io.buffer.DataBuffer
 import java.io.BufferedOutputStream
 import java.io.OutputStream
@@ -71,8 +72,8 @@ fun BufferedOutputStream.writeUInt32NoTag(size: Int) {
     }
 }
 
+// this should be refactored and placed inside KotlinSerializationProtobufDecoder
 private class ProtobufDataBufferDecoder(
-    val dataBuffer: DataBuffer,
     private val protobuf: ProtoBuf,
     private val messageSize: Int = DEFAULT_MESSAGE_MAX_SIZE
 ) {
@@ -80,17 +81,52 @@ private class ProtobufDataBufferDecoder(
     private var messageBytesToRead: Int = 0
 
 
-    // similar impl to readMessageSize from ProtobufDecoder.java
-    private fun readMessageSize(input: DataBuffer): Boolean {
+    fun <T> decodeDelimitedMessages(): List<T> {
         TODO()
     }
 
-    private fun decodeDelimitedMessage() {
-        TODO()
+    // similar impl to readMessageSize from ProtobufDecoder.java
+    private fun readMessageSize(input: DataBuffer): Boolean {
+        if (offset == 0) {
+            if (input.readableByteCount() == 0) return false
+            val messageSize = input.read().toInt() // should be the message's size
+            if (messageSize and 0x80 == 0) { // check if it's positive? Why tho? in case the first byte was not the message size?
+                messageBytesToRead = messageSize
+                return true
+            }
+            messageBytesToRead = messageSize and 0x7f // does this drops the msb?
+            offset = 7
+        }
+        if (offset < 32) {
+            while (offset < 32) {
+                if (input.readableByteCount() == 0) return false
+                val messageSize = input.read().toInt()
+                // shift the groups of 7 bits  because varints store numbers with the least significant group first
+                messageBytesToRead =
+                    (messageBytesToRead or messageSize and 0x7f) shl offset // and concatenate them together
+                if (messageSize and 0x80 == 0) {
+                    offset = 0
+                    return true
+                }
+                offset += 7
+            }
+        }
+        // Keep reading up to 64 bits
+        //Note: even though we read more bytes why we do not store their message size?
+        while (offset < 64) {
+            if (input.readableByteCount() == 0) return false
+            val messageSize = input.read().toInt()
+            if (messageSize and 0x80 == 0) {
+                offset = 0
+                return true
+            }
+            offset += 7
+        }
+        offset = 0 // is this needed?
+        throw DecodingException("Cannot parse message size: malformed varint")
     }
 
     companion object {
         private const val DEFAULT_MESSAGE_MAX_SIZE = 256 * 1024
-
     }
 }
