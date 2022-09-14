@@ -79,7 +79,8 @@ fun BufferedOutputStream.writeUInt32NoTag(size: Int) {
 }
 
 // this should be refactored and placed inside KotlinSerializationProtobufDecoder
-private class ProtobufDataBufferDecoder(
+// or this can be an extension on serializer
+class ProtobufDataBufferDecoder(
     private val protobuf: ProtoBuf,
     private val messageSize: Int = DEFAULT_MESSAGE_MAX_SIZE
 ) {

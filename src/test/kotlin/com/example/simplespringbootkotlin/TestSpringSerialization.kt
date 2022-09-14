@@ -100,7 +100,7 @@ class TestSpringSerialization(
         }
 
 
-        @Test
+        @Test // warning: fails when running all the tests together
         fun `test two-way channel serialization in rsocket api with ping-pong and turbine`(): Unit = runBlocking {
             val tcpRequester = rsocketBuilder
                 .tcp("localhost", serverPort.toInt())
@@ -117,7 +117,7 @@ class TestSpringSerialization(
                     for (incomingMessages in 0 until 10) {
                         println("------ received :${awaitItem()} --------")
                     }
-                    awaitComplete() // fails when running all the tests together
+                    awaitComplete()
                 }
         }
 

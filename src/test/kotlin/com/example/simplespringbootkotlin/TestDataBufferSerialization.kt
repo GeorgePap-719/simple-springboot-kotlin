@@ -4,7 +4,7 @@ package com.example.simplespringbootkotlin
 
 import com.example.simplespringbootkotlin.serialization.decodeFromByteArray
 import com.example.simplespringbootkotlin.serialization.decodeFromByteArrayToMono
-import com.example.simplespringbootkotlin.serialization.encodeToByteArray
+import com.example.simplespringbootkotlin.serialization.encodeToDataBuffer
 import io.kotest.matchers.shouldBe
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.reactive.asPublisher
@@ -35,7 +35,7 @@ internal class TestDataBufferSerialization {
         val input = "Hello dataBuffers"
 
         val stringSerializer = proto.serializersModule.serializer(type.type)
-        val buffer = proto.encodeToByteArray(stringSerializer, input, factory)
+        val buffer = proto.encodeToDataBuffer(stringSerializer, input, factory)
 
         val deserializedResult = proto.decodeFromByteArray(stringSerializer, buffer)
 
@@ -52,7 +52,7 @@ internal class TestDataBufferSerialization {
         val input = payload("Hello dataBuffers", "no error")
 
         val stringSerializer = proto.serializersModule.serializer(type.type)
-        val buffer = proto.encodeToByteArray(stringSerializer, input, factory)
+        val buffer = proto.encodeToDataBuffer(stringSerializer, input, factory)
 
         val deserializedResult = proto.decodeFromByteArray(stringSerializer, buffer)
 
@@ -68,7 +68,7 @@ internal class TestDataBufferSerialization {
         val input = payload("Hello dataBuffers", "no error")
 
         val stringSerializer = getSerializer(proto, type.type)
-        val buffer = proto.encodeToByteArray(stringSerializer, input, factory)
+        val buffer = proto.encodeToDataBuffer(stringSerializer, input, factory)
         val deserializedResult = proto.decodeFromByteArray(stringSerializer, buffer)
 
         println("Result: $deserializedResult")
@@ -96,7 +96,7 @@ internal class TestDataBufferSerialization {
         val input = payload("Hello dataBuffers", "no error")
 
         val stringSerializer = proto.serializersModule.serializer(type.type)
-        val buffer = proto.encodeToByteArray(stringSerializer, input, factory)
+        val buffer = proto.encodeToDataBuffer(stringSerializer, input, factory)
         val inputStream = flowOf(buffer).asPublisher(this.coroutineContext)
 
         val deserializedResult = proto.decodeFromByteArrayToMono(stringSerializer, inputStream)
@@ -114,7 +114,7 @@ internal class TestDataBufferSerialization {
         val input: Payload = payload("Hello dataBuffers", "no error")
 
         val stringSerializer = getSerializer(proto, type.type)
-        val buffer = proto.encodeToByteArray(stringSerializer, input, factory)
+        val buffer = proto.encodeToDataBuffer(stringSerializer, input, factory)
         val deserializedResult = proto.decodeFromByteArray(stringSerializer, buffer)
 
         println("Result: $deserializedResult")
@@ -133,7 +133,7 @@ internal class TestDataBufferSerialization {
         val input: Payload = payload("Hello dataBuffers", "no error")
 
         val stringImplSerializer = getSerializer(proto, typeImpl.type)
-        val buffer = proto.encodeToByteArray(stringImplSerializer, input, factory)
+        val buffer = proto.encodeToDataBuffer(stringImplSerializer, input, factory)
 
         val stringSerializer = getSerializer(proto, type.type)
         val deserializedResult = proto.decodeFromByteArray(stringSerializer, buffer)
@@ -155,7 +155,7 @@ internal class TestDataBufferSerialization {
         println(input::class.javaObjectType.typeName)
 
 //        val stringImplSerializer = getSerializer(proto, typeImpl.type)
-        val buffer = proto.encodeToByteArray(proto.serializersModule.serializer(), input, factory)
+        val buffer = proto.encodeToDataBuffer(proto.serializersModule.serializer(), input, factory)
 
         val stringSerializer = getSerializer(proto, type.type)
         val deserializedResult = proto.decodeFromByteArray(stringSerializer, buffer)

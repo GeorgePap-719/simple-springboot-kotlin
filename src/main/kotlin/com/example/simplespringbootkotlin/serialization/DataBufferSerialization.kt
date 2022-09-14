@@ -12,17 +12,38 @@ import org.reactivestreams.Publisher
 import org.springframework.core.io.buffer.DataBuffer
 import org.springframework.core.io.buffer.DataBufferFactory
 import org.springframework.core.io.buffer.DataBufferUtils
+import org.springframework.util.FastByteArrayOutputStream
 import reactor.core.publisher.Mono
+import java.io.IOException
 
-fun <T> ProtoBuf.encodeToByteArray(
+fun <T> ProtoBuf.encodeToDataBuffer(
     serializer: SerializationStrategy<T>,
     value: T,
     dataBufferFactory: DataBufferFactory
-): DataBuffer {
+): DataBuffer = try {
+    val outputStream = FastByteArrayOutputStream()
     val protoBytes = encodeToByteArray(serializer, value)
-    // we use wrap() here which does now allocate new memory, that's
+    protoBytes.writeTo(outputStream)
+    // use wrap() here which does now allocate new memory, that's
     // why we do not need DataBufferUtils.release(buffer).
-    return dataBufferFactory.wrap(protoBytes)
+    dataBufferFactory.wrap(outputStream.toByteArrayUnsafe())
+} catch (ioException: IOException) {
+    throw IllegalStateException("Unexpected I/O error while writing to data buffer", ioException)
+}
+
+fun <T> ProtoBuf.encodeToDataBufferDelimited(
+    serializer: SerializationStrategy<T>,
+    value: T,
+    dataBufferFactory: DataBufferFactory
+): DataBuffer = try {
+    val outputStream = FastByteArrayOutputStream()
+    val protoBytes = encodeToByteArray(serializer, value)
+    protoBytes.writeDelimitedTo(outputStream)
+    // use wrap() here which does now allocate new memory, that's
+    // why we do not need DataBufferUtils.release(buffer).
+    dataBufferFactory.wrap(outputStream.toByteArrayUnsafe())
+} catch (ioException: IOException) {
+    throw IllegalStateException("Unexpected I/O error while writing to data buffer", ioException)
 }
 
 // does not propagate exceptions like ProtobufDecoder.java

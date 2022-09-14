@@ -3,10 +3,12 @@
 package com.example.simplespringbootkotlin.serialization
 
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.transform
 import kotlinx.coroutines.reactive.asFlow
 import kotlinx.coroutines.reactive.awaitSingle
 import kotlinx.coroutines.reactor.asFlux
 import kotlinx.serialization.*
+import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.protobuf.ProtoBuf
 import org.reactivestreams.Publisher
 import org.springframework.core.ResolvableType
@@ -67,7 +69,7 @@ class KotlinSerializationProtobufEncoder(
         hints: MutableMap<String, Any>?
     ): DataBuffer {
         val kSerializer = getSerializer(protobufSerializer, valueType.type)
-        return protobufSerializer.encodeToByteArray(kSerializer, value, bufferFactory)
+        return protobufSerializer.encodeToDataBuffer(kSerializer, value, bufferFactory)
     }
 
     override fun getEncodableMimeTypes(): MutableList<MimeType> = mimeTypes
@@ -96,12 +98,14 @@ class KotlinSerializationProtobufDecoder(
         if (inputStream is Mono) {
             return Flux.from(decodeToMono(inputStream, elementType, mimeType, hints))
         }
-        //prototype transform { readMessages().forEach { emit(it) } }
+        val decoder = ProtobufDataBufferDecoder(protobufSerializer, maxMessageSize)
+        val kSerializer: KSerializer<Any> = getSerializer(protobufSerializer, elementType.type)
+        val listSerializer = ListSerializer(kSerializer)
         return inputStream
             .asFlow()
-            //TODO: when impl changes then use transform operator
-            .map { decodeDelimitedMessage(inputStream, elementType) }
-            .asFlux()
+            .transform<DataBuffer, Any> {
+                emit(decoder.decodeDelimitedMessages(listSerializer, it))
+            }.asFlux()
     }
 
     private suspend fun decodeDelimitedMessage(
