@@ -27,7 +27,7 @@ fun ByteArray.writeDelimitedTo(outputStream: OutputStream) {
             MAX_VARINT_SIZE * 2
         )
     ) // simulate  CodedOutputStream.newInstance(output, bufferSize)
-    stream.writeUInt32NoTag(serializedSize) // write sizeTag
+    stream.writeUInt32NoTag(serializedSize)
     writeTo(stream)
     stream.flush()
 }
@@ -40,7 +40,7 @@ fun ByteArray.writeTo(outputStream: OutputStream) {
             MAX_VARINT_SIZE * 2
         )
     ) // simulate  CodedOutputStream.newInstance(output, bufferSize)
-    stream.write(this) // write actual message
+    stream.write(this)
     stream.flush()
 }
 
