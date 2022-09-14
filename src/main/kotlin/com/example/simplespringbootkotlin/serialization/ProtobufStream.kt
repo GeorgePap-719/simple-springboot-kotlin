@@ -1,8 +1,14 @@
+@file:OptIn(ExperimentalSerializationApi::class)
+
 package com.example.simplespringbootkotlin.serialization
 
+import kotlinx.serialization.DeserializationStrategy
+import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.protobuf.ProtoBuf
 import org.springframework.core.codec.DecodingException
 import org.springframework.core.io.buffer.DataBuffer
+import org.springframework.core.io.buffer.DataBufferLimitException
+import org.springframework.core.io.buffer.DataBufferUtils
 import java.io.BufferedOutputStream
 import java.io.OutputStream
 
@@ -80,9 +86,38 @@ private class ProtobufDataBufferDecoder(
     private var offset: Int = 0
     private var messageBytesToRead: Int = 0
 
+    fun <T> decodeDelimitedMessages(
+        deserializer: DeserializationStrategy<List<T>>,
+        input: DataBuffer
+    ): List<T> = buildList {
+        var remainingBytesToRead: Int
+        var chunkBytesToRead: Int
+        try {
+            do {
+                if (!readMessageSize(input)) return@buildList
+                if (messageSize in 1 until messageBytesToRead) {
+                    throw DataBufferLimitException(
+                        "The number of bytes to read for message ($messageBytesToRead) exceeds the configured limit ($messageSize)"
+                    )
+                }
+                val buffer = input.factory().allocateBuffer(messageBytesToRead)
 
-    fun <T> decodeDelimitedMessages(): List<T> {
-        TODO()
+                chunkBytesToRead = minOf(messageBytesToRead, input.readableByteCount())
+                remainingBytesToRead = input.readableByteCount() - chunkBytesToRead
+
+                val bytesToWrite = ByteArray(chunkBytesToRead)
+                input.read(bytesToWrite, offset, chunkBytesToRead)
+                buffer.write(bytesToWrite)
+                messageBytesToRead -= chunkBytesToRead
+                if (messageBytesToRead == 0) { // do not deserialize in case readableByteCount was smaller than messageBytesToRead
+                    DataBufferUtils.release(buffer)
+                    val messages = protobuf.decodeFromByteArray(deserializer, buffer.asInputStream().readAllBytes())
+                    addAll(messages)
+                }
+            } while (remainingBytesToRead > 0)
+        } finally {
+            DataBufferUtils.release(input)
+        }
     }
 
     // similar impl to readMessageSize from ProtobufDecoder.java
