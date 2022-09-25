@@ -5,17 +5,18 @@ package com.example.simplespringbootkotlin.serialization
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.transform
 import kotlinx.coroutines.reactive.asFlow
-import kotlinx.coroutines.reactive.awaitSingle
 import kotlinx.coroutines.reactor.asFlux
-import kotlinx.serialization.*
+import kotlinx.serialization.ExperimentalSerializationApi
+import kotlinx.serialization.KSerializer
 import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.protobuf.ProtoBuf
+import kotlinx.serialization.serializer
+import kotlinx.serialization.serializerOrNull
 import org.reactivestreams.Publisher
 import org.springframework.core.ResolvableType
 import org.springframework.core.codec.Decoder
 import org.springframework.core.io.buffer.DataBuffer
 import org.springframework.core.io.buffer.DataBufferFactory
-import org.springframework.core.io.buffer.DataBufferUtils
 import org.springframework.http.MediaType
 import org.springframework.http.codec.HttpMessageEncoder
 import org.springframework.http.codec.protobuf.ProtobufCodecSupport
@@ -23,7 +24,6 @@ import org.springframework.util.ConcurrentReferenceHashMap
 import org.springframework.util.MimeType
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
-import java.io.IOException
 import java.lang.reflect.Type
 
 class KotlinSerializationProtobufEncoder(
@@ -50,15 +50,7 @@ class KotlinSerializationProtobufEncoder(
         valueType: ResolvableType
     ): DataBuffer {
         val kSerializer = serializer(valueType.type)
-        val encodedMessage = protobufSerializer.encodeToByteArray(kSerializer, value)
-        bufferFactory.allocateBuffer().use { buffer: DataBuffer ->
-            val serializedSize = encodedMessage.size
-            val outputStream = buffer.asOutputStream()
-            outputStream.write(serializedSize) // write first size of message in stream then write the actual message
-            outputStream.write(encodedMessage)
-            outputStream.flush()
-            return buffer
-        }
+        return protobufSerializer.encodeToDataBufferDelimited(kSerializer, value, bufferFactory)
     }
 
     override fun encodeValue(
@@ -108,27 +100,6 @@ class KotlinSerializationProtobufDecoder(
             }.asFlux()
     }
 
-    private suspend fun decodeDelimitedMessage(
-        inputStream: Publisher<DataBuffer>,
-        valueType: ResolvableType
-    ): Any {
-        val dataBuffer = inputStream.awaitSingle()
-        try {
-            val kSerializer = getSerializer(protobufSerializer, valueType.type)
-            // read first byte for getting the message size.
-            val byte = dataBuffer.read()
-            val byteArray = ByteArray(1)
-            byteArray[0] = byte
-            val bytesSizeToRead = protobufSerializer.decodeFromByteArray<Int>(byteArray)
-            val bytesToWrite = ByteArray(bytesSizeToRead)
-            dataBuffer.read(byteArray, 0, bytesSizeToRead)
-            // use the serializer for the rest bytes.
-            return protobufSerializer.decodeFromByteArray(kSerializer, bytesToWrite)
-        } finally {
-            DataBufferUtils.release(dataBuffer)
-        }
-    }
-
     override fun decodeToMono(
         inputStream: Publisher<DataBuffer>,
         elementType: ResolvableType,
@@ -136,7 +107,7 @@ class KotlinSerializationProtobufDecoder(
         hints: MutableMap<String, Any>?
     ): Mono<Any> {
         val kSerializer = getSerializer(protobufSerializer, elementType.type)
-        return protobufSerializer.decodeFromByteArrayToMono(kSerializer, inputStream)
+        return protobufSerializer.decodeFromDataBufferToMono(kSerializer, inputStream)
     }
 
     override fun decode(
@@ -146,7 +117,7 @@ class KotlinSerializationProtobufDecoder(
         hints: MutableMap<String, Any>?
     ): Any {
         val kSerializer = getSerializer(protobufSerializer, targetType.type)
-        return protobufSerializer.decodeFromByteArray(kSerializer, buffer)
+        return protobufSerializer.decodeFromDataBuffer(kSerializer, buffer)
     }
 
     override fun getDecodableMimeTypes(): MutableList<MimeType> = mimeTypes
@@ -174,14 +145,3 @@ private val _mimeTypes = listOf(
 private const val DELIMITED_KEY = "delimited" //cannot access 'DELIMITED_KEY', it is package-private
 
 private const val DELIMITED_VALUE = "true" //cannot access 'DELIMITED_VALUE', it is package-private
-
-//TODO: limit the scope as much as possible
-inline fun <D : DataBuffer, R> D.use(block: (D) -> R): R {
-    return try {
-        block(this)
-    } catch (ioException: IOException) {
-        DataBufferUtils.release(this)
-        throw IllegalArgumentException("Unexpected I/O error while writing to data buffer", ioException)
-    }
-}
-

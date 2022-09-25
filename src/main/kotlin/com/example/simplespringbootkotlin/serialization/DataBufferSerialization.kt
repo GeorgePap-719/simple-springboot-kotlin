@@ -48,7 +48,7 @@ fun <T> ProtoBuf.encodeToDataBufferDelimited(
 
 // does not propagate exceptions like ProtobufDecoder.java
 // for a more unified message error handling.
-fun <T> ProtoBuf.decodeFromByteArray(
+fun <T> ProtoBuf.decodeFromDataBuffer(
     deserializer: DeserializationStrategy<T>,
     dataBuffer: DataBuffer
 ): T {
@@ -59,9 +59,9 @@ fun <T> ProtoBuf.decodeFromByteArray(
     }
 }
 
-fun <T> ProtoBuf.decodeFromByteArrayToMono(
+fun <T> ProtoBuf.decodeFromDataBufferToMono(
     deserializer: DeserializationStrategy<T>,
     inputStream: Publisher<DataBuffer>
 ): Mono<T> = mono {
-    decodeFromByteArray(deserializer, inputStream.awaitSingle())
+    decodeFromDataBuffer(deserializer, inputStream.awaitSingle())
 }
